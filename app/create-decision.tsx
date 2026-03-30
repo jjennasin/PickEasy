@@ -1,17 +1,11 @@
-import { palette } from "@/constants/palette";
-import type { DecisionCategory, DecisionRecord } from "@/types/decision";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { palette } from '@/constants/palette';
+import type { DecisionCategory, DecisionRecord } from '@/types/decision';
+import { serializeDecisionRecord } from '@/utils/decision-route';
 
 type CategoryOption = {
   id: DecisionCategory;
@@ -22,30 +16,29 @@ type CategoryOption = {
 
 const categoryOptions: CategoryOption[] = [
   {
-    id: "food-dining",
-    emoji: "\u{1F354}",
-    label: "Food & Dining",
+    id: 'food-dining',
+    emoji: '\u{1F354}',
+    label: 'Food & Dining',
     backgroundColor: palette.peach,
   },
   {
-    id: "activity-entertainment",
-    emoji: "\u{1F3AC}",
-    label: "Activity & Entertainment",
+    id: 'activity-entertainment',
+    emoji: '\u{1F3AC}',
+    label: 'Activity & Entertainment',
     backgroundColor: palette.blue,
   },
   {
-    id: "study-work",
-    emoji: "\u{1F4D6}",
-    label: "Study & Work",
+    id: 'study-work',
+    emoji: '\u{1F4D6}',
+    label: 'Study & Work',
     backgroundColor: palette.red,
   },
 ];
 
 export default function CreateDecisionScreen() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] =
-    useState<DecisionCategory | null>(null);
-  const [roomName, setRoomName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<DecisionCategory | null>(null);
+  const [roomName, setRoomName] = useState('');
 
   const decisionDraft = useMemo<DecisionRecord>(
     () => ({
@@ -57,7 +50,7 @@ export default function CreateDecisionScreen() {
       result: null,
       created_at: null,
     }),
-    [roomName, selectedCategory],
+    [roomName, selectedCategory]
   );
 
   const isReadyToCreate = Boolean(decisionDraft.category && decisionDraft.name);
@@ -67,24 +60,26 @@ export default function CreateDecisionScreen() {
       return;
     }
 
-    console.log("decisionDraft", decisionDraft);
-    console.log("decisionDraft:json", JSON.stringify(decisionDraft, null, 2));
+    console.log('decisionDraft', decisionDraft);
+    console.log('decisionDraft:json', JSON.stringify(decisionDraft, null, 2));
+
+    router.push({
+      pathname: '/add-options',
+      params: {
+        decision: serializeDecisionRecord(decisionDraft),
+      },
+    });
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={32}
-            color={palette.white}
-          />
+          accessibilityLabel="Go back">
+          <MaterialCommunityIcons name="arrow-left" size={32} color={palette.white} />
         </Pressable>
         <Text style={styles.headerTitle}>Create decision</Text>
       </View>
@@ -92,8 +87,7 @@ export default function CreateDecisionScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>What are we deciding?</Text>
         <Text style={styles.subtitle}>Choose a category to get started</Text>
 
@@ -109,8 +103,7 @@ export default function CreateDecisionScreen() {
                   styles.categoryCard,
                   { backgroundColor: category.backgroundColor },
                   isSelected && styles.selectedCategoryCard,
-                ]}
-              >
+                ]}>
                 <Text style={styles.categoryEmoji}>{category.emoji}</Text>
                 <Text style={styles.categoryLabel}>{category.label}</Text>
               </Pressable>
@@ -137,36 +130,22 @@ export default function CreateDecisionScreen() {
         </Text>
 
         <View style={styles.roomCodeBox}>
-          <Text style={styles.roomCodeText}>
-            {decisionDraft.join_code ?? " "}
-          </Text>
+          <Text style={styles.roomCodeText}>{decisionDraft.join_code ?? ' '}</Text>
         </View>
 
         <View style={styles.shareRow}>
           <Text style={styles.shareText}>Share code</Text>
-          <MaterialCommunityIcons
-            name="export-variant"
-            size={28}
-            color={palette.blue}
-          />
+          <MaterialCommunityIcons name="export-variant" size={28} color={palette.blue} />
         </View>
 
         <View style={styles.divider} />
 
         <Pressable
-          style={[
-            styles.createButton,
-            !isReadyToCreate && styles.createButtonDisabled,
-          ]}
+          style={[styles.createButton, !isReadyToCreate && styles.createButtonDisabled]}
           disabled={!isReadyToCreate}
-          onPress={handleCreateDecision}
-        >
+          onPress={handleCreateDecision}>
           <Text style={styles.createButtonText}>Create decision room</Text>
-          <MaterialCommunityIcons
-            name="chevron-double-right"
-            size={32}
-            color={palette.white}
-          />
+          <MaterialCommunityIcons name="chevron-double-right" size={32} color={palette.white} />
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -180,22 +159,22 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: palette.darkBlue,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 18,
   },
   backButton: {
     width: 44,
     height: 44,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 8,
   },
   headerTitle: {
     color: palette.white,
     fontSize: 28,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   container: {
     flex: 1,
@@ -210,22 +189,22 @@ const styles = StyleSheet.create({
     color: palette.darkBlue,
     fontSize: 58,
     lineHeight: 72,
-    fontWeight: "800",
-    textAlign: "center",
+    fontWeight: '800',
+    textAlign: 'center',
     letterSpacing: -2,
   },
   subtitle: {
     marginTop: 10,
     color: palette.blue,
     fontSize: 28,
-    fontWeight: "500",
-    textAlign: "center",
+    fontWeight: '500',
+    textAlign: 'center',
     letterSpacing: -0.8,
   },
   categoryRow: {
     marginTop: 30,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 12,
   },
   categoryCard: {
@@ -234,10 +213,10 @@ const styles = StyleSheet.create({
     borderRadius: 38,
     paddingHorizontal: 12,
     paddingVertical: 22,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 3,
-    borderColor: "transparent",
+    borderColor: 'transparent',
   },
   selectedCategoryCard: {
     borderColor: palette.darkBlue,
@@ -251,8 +230,8 @@ const styles = StyleSheet.create({
     color: palette.darkBlue,
     fontSize: 16,
     lineHeight: 30,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
   },
   divider: {
     height: 4,
@@ -263,15 +242,15 @@ const styles = StyleSheet.create({
     marginTop: 28,
     color: palette.darkBlue,
     fontSize: 28,
-    fontWeight: "800",
-    textAlign: "center",
+    fontWeight: '800',
+    textAlign: 'center',
   },
   input: {
     marginTop: 18,
     backgroundColor: palette.white,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#D9D3CB",
+    borderColor: '#D9D3CB',
     paddingHorizontal: 22,
     paddingVertical: 24,
     fontSize: 18,
@@ -281,37 +260,37 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: palette.blue,
     fontSize: 18,
-    textAlign: "center",
+    textAlign: 'center',
   },
   roomCodeBox: {
-    alignSelf: "center",
+    alignSelf: 'center',
     width: 240,
     marginTop: 22,
     backgroundColor: palette.white,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#D9D3CB",
+    borderColor: '#D9D3CB',
     paddingVertical: 18,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   roomCodeText: {
     minHeight: 44,
     color: palette.darkBlue,
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   shareRow: {
     marginTop: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
   shareText: {
     color: palette.blue,
     fontSize: 18,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   createButton: {
     marginTop: 44,
@@ -319,9 +298,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 26,
     paddingHorizontal: 22,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   createButtonDisabled: {
     opacity: 0.55,
@@ -329,7 +308,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: palette.white,
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: '700',
     letterSpacing: -0.4,
   },
 });
