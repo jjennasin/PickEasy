@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { palette } from '@/constants/palette';
@@ -31,6 +32,8 @@ const recentPicks = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
@@ -46,7 +49,9 @@ export default function HomeScreen() {
           <MaterialCommunityIcons name="account-group-outline" size={44} color="#27242C" />
           <Text style={styles.sectionTitle}>Get started</Text>
 
-          <Pressable style={[styles.primaryAction, styles.startAction]}>
+          <Pressable
+            style={[styles.primaryAction, styles.startAction]}
+            onPress={() => router.push('/create-decision')}>
             <Text style={styles.primaryActionText}>Start new decision</Text>
             <MaterialCommunityIcons name="plus-circle-outline" size={34} color={palette.white} />
           </Pressable>
