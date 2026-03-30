@@ -1,98 +1,206 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { palette } from '@/constants/palette';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const recentPicks = [
+  {
+    id: '1',
+    title: 'Dinner with Roommates',
+    result: 'Chipotle',
+    time: 'Yesterday',
+    backgroundColor: palette.peach,
+    textColor: palette.white,
+  },
+  {
+    id: '2',
+    title: 'Dinner with Roommates',
+    result: 'Chipotle',
+    time: 'Yesterday',
+    backgroundColor: palette.blue,
+    textColor: palette.white,
+  },
+  {
+    id: '3',
+    title: 'Dinner with Roommates',
+    result: 'Chipotle',
+    time: 'Yesterday',
+    backgroundColor: palette.red,
+    textColor: palette.white,
+  },
+];
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <Text style={styles.brand}>PickEasy</Text>
+          <Text style={styles.tagline}>Make group decisions faster</Text>
+        </View>
+
+        <View style={styles.actionCard}>
+          <MaterialCommunityIcons name="account-group-outline" size={44} color="#27242C" />
+          <Text style={styles.sectionTitle}>Get started</Text>
+
+          <Pressable
+            style={[styles.primaryAction, styles.startAction]}
+            onPress={() => router.push('/create-decision')}>
+            <Text style={styles.primaryActionText}>Start new decision</Text>
+            <MaterialCommunityIcons name="plus-circle-outline" size={34} color={palette.white} />
+          </Pressable>
+
+          <Pressable style={[styles.primaryAction, styles.joinAction]}>
+            <Text style={styles.primaryActionText}>Join with code</Text>
+            <MaterialCommunityIcons name="chevron-double-right" size={34} color={palette.white} />
+          </Pressable>
+        </View>
+
+        <View style={styles.recentCard}>
+          <Text style={styles.recentTitle}>Recent picks</Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.recentRow}>
+            {recentPicks.map((pick) => (
+              <View
+                key={pick.id}
+                style={[styles.pickCard, { backgroundColor: pick.backgroundColor }]}>
+                <Text style={[styles.pickText, { color: pick.textColor }]}>
+                  {'\u{1F354}'} {pick.title}
+                </Text>
+                <Text style={[styles.pickText, { color: pick.textColor }]}>{'\u{2192}'} {pick.result}</Text>
+                <Text style={[styles.pickText, { color: pick.textColor }]}>{pick.time}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: palette.cream,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: palette.cream,
+  },
+  content: {
+    paddingBottom: 36,
+  },
+  hero: {
+    backgroundColor: palette.darkBlue,
+    borderBottomLeftRadius: 72,
+    borderBottomRightRadius: 72,
+    minHeight: 340,
+    paddingHorizontal: 28,
+    paddingTop: 72,
+    paddingBottom: 92,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brand: {
+    color: palette.white,
+    fontSize: 56,
+    fontWeight: '800',
+    letterSpacing: -2,
+    textAlign: 'center',
+  },
+  tagline: {
+    marginTop: 10,
+    color: palette.white,
+    fontSize: 26,
+    fontWeight: '500',
+    textAlign: 'center',
+    letterSpacing: -0.6,
+  },
+  actionCard: {
+    marginTop: -56,
+    marginHorizontal: 24,
+    backgroundColor: palette.white,
+    borderRadius: 46,
+    paddingHorizontal: 24,
+    paddingVertical: 30,
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.07,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+  sectionTitle: {
+    marginTop: 8,
+    fontSize: 28,
+    fontWeight: '800',
+    color: palette.ink,
+  },
+  primaryAction: {
+    width: '100%',
+    marginTop: 26,
+    borderRadius: 999,
+    paddingVertical: 24,
+    paddingHorizontal: 28,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  startAction: {
+    backgroundColor: palette.blue,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  joinAction: {
+    backgroundColor: palette.red,
+  },
+  primaryActionText: {
+    color: palette.white,
+    fontSize: 23,
+    fontWeight: '500',
+    letterSpacing: -0.5,
+  },
+  recentCard: {
+    marginTop: 22,
+    marginHorizontal: 24,
+    backgroundColor: palette.white,
+    borderRadius: 46,
+    paddingTop: 34,
+    paddingBottom: 36,
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
+  },
+  recentTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: palette.ink,
+    paddingHorizontal: 24,
+  },
+  recentRow: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    gap: 18,
+  },
+  pickCard: {
+    width: 230,
+    minHeight: 220,
+    borderRadius: 34,
+    padding: 18,
+    justifyContent: 'center',
+  },
+  pickText: {
+    fontSize: 20,
+    lineHeight: 42,
+    fontWeight: '500',
   },
 });
