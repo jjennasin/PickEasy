@@ -1,5 +1,7 @@
 export type DecisionCategory = 'food-dining' | 'activity-entertainment' | 'study-work';
 
+export type DecisionPhase = 'options' | 'voting' | 'results';
+
 export type DecisionOption = {
   id: string;
   label: string;
@@ -14,4 +16,8 @@ export type DecisionRecord = {
   options: DecisionOption[];
   result: string | null;
   created_at: string | null;
+  phase?: DecisionPhase;
+  participants?: string[];
+  completed_voters?: string[];
+  result_votes?: number | null;
 };

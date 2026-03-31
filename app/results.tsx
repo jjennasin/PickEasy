@@ -1,20 +1,33 @@
 import { palette } from '@/constants/palette';
+import type { DecisionRecord } from '@/types/decision';
+import { parseDecisionRecord } from '@/utils/decision-route';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const emptyDecisionRecord: DecisionRecord = {
+  uuid: null,
+  join_code: null,
+  name: '',
+  category: null,
+  options: [],
+  result: null,
+  created_at: null,
+};
+
 export default function ResultsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ decision?: string }>();
+  const decision = parseDecisionRecord(params.decision) ?? emptyDecisionRecord;
 
-  // Placeholder data (to be replaced with backend data later)
-  const decisionName = 'Decision Room Name';
+  const decisionName = decision.name || 'Decision Room Name';
   const winner = {
-    name: "Raising Cane's",
-    emoji: "🍗",
-    votes: 5,
-    categoryColor: palette.peach, // like Food & Dining
-    circleColor: palette.red,      // same as join/create buttons
+    name: decision.result ?? 'No winner selected',
+    votes: decision.result_votes ?? 0,
+    totalVoters: decision.completed_voters?.length ?? 0,
+    categoryColor: palette.peach,
+    circleColor: palette.red,
   };
 
   return (
@@ -53,7 +66,7 @@ export default function ResultsScreen() {
             {/* Light red inner box */}
             <View style={[styles.optionBox, { backgroundColor: winner.categoryColor }]}>
                 <View style={[styles.resultCircle, { backgroundColor: winner.circleColor }]}>
-                <Text style={styles.resultEmoji}>{winner.emoji}</Text>
+                <MaterialCommunityIcons name="trophy-outline" size={40} color={palette.white} />
                 </View>
                 <Text style={styles.resultName}>{winner.name}</Text>
             </View>
@@ -64,7 +77,9 @@ export default function ResultsScreen() {
         {/* Light blue votes box */}
           <View style={styles.votesBox}>
             <Text style={styles.votesText}>
-              {`${winner.name} won with ${winner.votes} votes from the group!`}
+              {winner.votes > 0
+                ? `${winner.name} won with ${winner.votes} vote${winner.votes === 1 ? '' : 's'} after ${winner.totalVoters} participant${winner.totalVoters === 1 ? '' : 's'} finished voting.`
+                : `No option was approved in this round yet.`}
             </Text>
           </View>
           <View style={styles.divider} />

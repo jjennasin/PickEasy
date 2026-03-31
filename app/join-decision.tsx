@@ -1,6 +1,9 @@
 import { palette } from '@/constants/palette';
+import { db } from '@/firebaseConfig';
+import { serializeDecisionRecord } from '@/utils/decision-route';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { arrayUnion, collection, getDocs, limit, query, updateDoc, where } from 'firebase/firestore';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,18 +11,73 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function JoinDecisionScreen() {
   const router = useRouter();
   const [code, setCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [participantId] = useState(() => `player-${Math.random().toString(36).slice(2, 10)}`);
 
-  const isReady = code.trim().length > 0;
+  const normalizedCode = code.trim().toUpperCase();
+  const isReady = normalizedCode.length > 0;
 
-  const handleJoin = () => {
-    if (!isReady) return;
+  const handleJoin = async () => {
+    if (!isReady || isJoining) return;
 
-    console.log('Joining with code:', code);
+    try {
+      setIsJoining(true);
+      setErrorMessage(null);
 
-    router.push({
-      pathname: '/decision-room',
-      params: { code },
-    });
+      const roomQuery = await getDocs(
+        query(
+          collection(db, 'decisions'),
+          where('join_code', '==', normalizedCode),
+          limit(1)
+        )
+      );
+
+      if (roomQuery.empty) {
+        throw new Error('Room not found. Check the code and try again.');
+      }
+
+      const roomDoc = roomQuery.docs[0];
+      const roomData = roomDoc.data();
+
+      await updateDoc(roomDoc.ref, {
+        participants: arrayUnion(participantId),
+      });
+
+      const nextDecision = {
+        uuid: roomData.uuid ?? roomDoc.id,
+        join_code: roomData.join_code ?? normalizedCode,
+        name: roomData.name ?? '',
+        category: roomData.category ?? null,
+        options: Array.isArray(roomData.options) ? roomData.options : [],
+        result: roomData.result ?? null,
+        created_at:
+          typeof roomData.created_at?.toDate === 'function'
+            ? roomData.created_at.toDate().toISOString()
+            : null,
+        phase: roomData.phase ?? 'options',
+        participants: Array.from(new Set([...(roomData.participants ?? []), participantId])),
+        completed_voters: Array.isArray(roomData.completed_voters)
+          ? roomData.completed_voters
+          : [],
+        result_votes: roomData.result_votes ?? null,
+      };
+
+      router.push({
+        pathname: nextDecision.phase === 'results' ? '/results' : nextDecision.phase === 'voting' ? '/voting' : '/decision-room',
+        params: {
+          decision: serializeDecisionRecord(nextDecision),
+          participantId,
+        },
+      });
+    } catch (error) {
+      console.error('Error joining decision room:', error);
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Unable to join the room right now.'
+      );
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   return (
@@ -47,19 +105,25 @@ export default function JoinDecisionScreen() {
         <View style={styles.inputBox}>
           <TextInput
             value={code}
-            onChangeText={setCode}
+            onChangeText={(value) => setCode(value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
             placeholder="Enter your decision room's code to begin voting"
             placeholderTextColor={palette.blue}
             style={styles.input}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            onSubmitEditing={handleJoin}
+            returnKeyType="go"
           />
         </View>
 
+        {errorMessage ? <Text style={styles.helperText}>{errorMessage}</Text> : null}
+
         {/* BUTTON */}
         <Pressable
-          style={[styles.joinButton, !isReady && styles.joinButtonDisabled]}
-          disabled={!isReady}
+          style={[styles.joinButton, (!isReady || isJoining) && styles.joinButtonDisabled]}
+          disabled={!isReady || isJoining}
           onPress={handleJoin}>
-          <Text style={styles.joinButtonText}>Join decision room</Text>
+          <Text style={styles.joinButtonText}>{isJoining ? 'Joining...' : 'Join decision room'}</Text>
           <MaterialCommunityIcons
             name="chevron-double-right"
             size={32}

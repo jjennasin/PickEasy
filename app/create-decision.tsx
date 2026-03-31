@@ -1,11 +1,12 @@
+import { createDecision } from '@/app/services/decisionService';
+import { palette } from '@/constants/palette';
+import type { DecisionCategory, DecisionRecord } from '@/types/decision';
+import { serializeDecisionRecord } from '@/utils/decision-route';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { palette } from '@/constants/palette';
-import type { DecisionCategory, DecisionRecord } from '@/types/decision';
-import { serializeDecisionRecord } from '@/utils/decision-route';
 
 type CategoryOption = {
   id: DecisionCategory;
@@ -39,36 +40,52 @@ export default function CreateDecisionScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<DecisionCategory | null>(null);
   const [roomName, setRoomName] = useState('');
+  const [joinCode] = useState(() => Math.random().toString(36).substring(2, 8).toUpperCase());
+  const [participantId] = useState(() => `player-${Math.random().toString(36).slice(2, 10)}`);
+  const [isCreating, setIsCreating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const decisionDraft = useMemo<DecisionRecord>(
     () => ({
       uuid: null,
-      join_code: null,
+      join_code: joinCode,
       name: roomName.trim(),
       category: selectedCategory,
       options: [],
       result: null,
       created_at: null,
     }),
-    [roomName, selectedCategory]
+    [joinCode, roomName, selectedCategory]
   );
 
   const isReadyToCreate = Boolean(decisionDraft.category && decisionDraft.name);
 
-  const handleCreateDecision = () => {
-    if (!isReadyToCreate) {
+  const handleCreateDecision = async () => {
+    if (!isReadyToCreate || isCreating) {
       return;
     }
 
-    console.log('decisionDraft', decisionDraft);
-    console.log('decisionDraft:json', JSON.stringify(decisionDraft, null, 2));
+    try {
+      setIsCreating(true);
+      setErrorMessage(null);
 
-    router.push({
-      pathname: '/add-options',
-      params: {
-        decision: serializeDecisionRecord(decisionDraft),
-      },
-    });
+      const savedDecision = await createDecision(decisionDraft, participantId);
+
+      router.push({
+        pathname: '/add-options',
+        params: {
+          decision: serializeDecisionRecord(savedDecision),
+          participantId,
+        },
+      });
+    } catch (error) {
+      console.error('Error creating decision room:', error);
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Unable to create the room right now.'
+      );
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -140,11 +157,18 @@ export default function CreateDecisionScreen() {
 
         <View style={styles.divider} />
 
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
         <Pressable
-          style={[styles.createButton, !isReadyToCreate && styles.createButtonDisabled]}
-          disabled={!isReadyToCreate}
+          style={[
+            styles.createButton,
+            (!isReadyToCreate || isCreating) && styles.createButtonDisabled,
+          ]}
+          disabled={!isReadyToCreate || isCreating}
           onPress={handleCreateDecision}>
-          <Text style={styles.createButtonText}>Create decision room</Text>
+          <Text style={styles.createButtonText}>
+            {isCreating ? 'Creating room...' : 'Create decision room'}
+          </Text>
           <MaterialCommunityIcons name="chevron-double-right" size={32} color={palette.white} />
         </Pressable>
       </ScrollView>
@@ -260,6 +284,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: palette.blue,
     fontSize: 18,
+    textAlign: 'center',
+  },
+  errorText: {
+    marginTop: 20,
+    color: palette.red,
+    fontSize: 16,
+    fontWeight: '600',
     textAlign: 'center',
   },
   roomCodeBox: {
