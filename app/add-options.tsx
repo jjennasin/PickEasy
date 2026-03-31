@@ -4,7 +4,10 @@ import type {
   DecisionOption,
   DecisionRecord,
 } from "@/types/decision";
-import { parseDecisionRecord } from "@/utils/decision-route";
+import {
+  parseDecisionRecord,
+  serializeDecisionRecord,
+} from "@/utils/decision-route";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -165,6 +168,21 @@ export default function AddOptionsScreen() {
     );
   };
 
+  const canContinue = decision.options.length > 0;
+
+  const handleContinue = () => {
+    if (!canContinue) {
+      return;
+    }
+
+    router.push({
+      pathname: "/voting",
+      params: {
+        decision: serializeDecisionRecord(decision),
+      },
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.header}>
@@ -264,7 +282,14 @@ export default function AddOptionsScreen() {
 
         <View style={styles.divider} />
 
-        <Pressable style={styles.continueButton}>
+        <Pressable
+          style={[
+            styles.continueButton,
+            !canContinue && styles.continueButtonDisabled,
+          ]}
+          disabled={!canContinue}
+          onPress={handleContinue}
+        >
           <Text style={styles.continueButtonText}>Continue to voting</Text>
           <MaterialCommunityIcons
             name="chevron-double-right"
@@ -418,6 +443,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  continueButtonDisabled: {
+    opacity: 0.55,
   },
   continueButtonText: {
     color: palette.white,
