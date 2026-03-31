@@ -9,15 +9,16 @@ export async function createDecision(decisionData, participantId) {
 
     if (!hasRequiredFirebaseConfig) {
       throw new Error(
-        "Firebase is not configured yet. Add your EXPO_PUBLIC_FIREBASE_* values first."
+        "Firebase isnt configured so add the EXPO_PUBLIC_FIREBASE_ vals first."
       );
     }
 
     const decisionsCollection = collection(db, "decisions");
     const docRef = doc(decisionsCollection);
-    const joinCode = (decisionData.join_code ?? Math.random().toString(36).slice(2, 8))
-      .toUpperCase();
+    // 6 character random join code
+    const joinCode = (decisionData.join_code ?? Math.random().toString(36).slice(2, 8)).toUpperCase();
 
+    //had to add local participants so it could see who it was waiting on, but no user auth
     const savedDecision = {
       uuid: docRef.id,
       join_code: joinCode,
@@ -34,7 +35,7 @@ export async function createDecision(decisionData, participantId) {
 
     await setDoc(docRef, savedDecision);
 
-    console.log("Created decision with ID:", docRef.id);
+    console.log("created decision with ID:", docRef.id);
     return {
       ...savedDecision,
       created_at: new Date().toISOString(),

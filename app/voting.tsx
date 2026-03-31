@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+
 const emptyDecisionRecord: DecisionRecord = {
   uuid: null,
   join_code: null,
@@ -32,7 +33,7 @@ export default function VotingScreen() {
     if (!decision.uuid) {
       return undefined;
     }
-
+    // for reatime updating
     const unsubscribe = onSnapshot(doc(db, "decisions", decision.uuid), (snapshot) => {
       if (!snapshot.exists()) {
         return;
@@ -92,13 +93,14 @@ export default function VotingScreen() {
   const totalParticipants = Math.max(decision.participants?.length ?? 1, 1);
   const completedCount = decision.completed_voters?.length ?? 0;
 
+  // submits the votes, updates firestore and changes phase to results when everyones done voting
   const submitVotes = async (nextApproved = approved) => {
     if (!decision.uuid || hasSubmitted || isSubmitting) {
       return;
     }
 
     setIsSubmitting(true);
-
+    // makes sure the data is up to date before submitting
     try {
       await runTransaction(db, async (transaction) => {
         const roomRef = doc(db, "decisions", decision.uuid as string);

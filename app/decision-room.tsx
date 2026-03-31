@@ -42,7 +42,7 @@ export default function DecisionRoomScreen() {
     if (!decision.uuid) {
       return undefined;
     }
-
+    // for realtime updating for options and changing between the voting and results phases
     const unsubscribe = onSnapshot(doc(db, 'decisions', decision.uuid), (snapshot) => {
       if (!snapshot.exists()) {
         return;
@@ -96,7 +96,7 @@ export default function DecisionRoomScreen() {
     return unsubscribe;
   }, [decision.uuid, participantId, router]);
 
-  // Add a new option (shared room behavior)
+  // Add a new option with shared room behavior, updates firestore and syncs to all the users in the room
   const handleAddOption = async () => {
     const trimmedInput = currentInput.trim();
 
@@ -115,7 +115,7 @@ export default function DecisionRoomScreen() {
     }
   };
 
-  // Delete an option (shared room behavior)
+  // Delete an option with shared room behavior, updates firestore and syncs to all the users in the room 
   const handleDeleteOption = async (index: number) => {
     const nextOptions = [...options];
     nextOptions.splice(index, 1);

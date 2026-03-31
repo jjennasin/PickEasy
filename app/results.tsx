@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// if theres no decision data and its an error then theres null defaults
 const emptyDecisionRecord: DecisionRecord = {
   uuid: null,
   join_code: null,

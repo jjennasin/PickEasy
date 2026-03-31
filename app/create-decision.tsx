@@ -41,7 +41,7 @@ export default function CreateDecisionScreen() {
   const [selectedCategory, setSelectedCategory] = useState<DecisionCategory | null>(null);
   const [roomName, setRoomName] = useState('');
   const [joinCode] = useState(() => Math.random().toString(36).substring(2, 8).toUpperCase());
-  const [participantId] = useState(() => `player-${Math.random().toString(36).slice(2, 10)}`);
+  const [participantId] = useState(() => `user-${Math.random().toString(36).slice(2, 10)}`);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -81,7 +81,7 @@ export default function CreateDecisionScreen() {
     } catch (error) {
       console.error('Error creating decision room:', error);
       setErrorMessage(
-        error instanceof Error ? error.message : 'Unable to create the room right now.'
+        error instanceof Error ? error.message : 'Unable to create room'
       );
     } finally {
       setIsCreating(false);

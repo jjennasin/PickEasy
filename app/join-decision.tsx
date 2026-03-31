@@ -13,7 +13,7 @@ export default function JoinDecisionScreen() {
   const [code, setCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [participantId] = useState(() => `player-${Math.random().toString(36).slice(2, 10)}`);
+  const [participantId] = useState(() => `user-${Math.random().toString(36).slice(2, 10)}`);
 
   const normalizedCode = code.trim().toUpperCase();
   const isReady = normalizedCode.length > 0;
@@ -25,6 +25,7 @@ export default function JoinDecisionScreen() {
       setIsJoining(true);
       setErrorMessage(null);
 
+      // query for the room that has that join code
       const roomQuery = await getDocs(
         query(
           collection(db, 'decisions'),
@@ -36,7 +37,7 @@ export default function JoinDecisionScreen() {
       if (roomQuery.empty) {
         throw new Error('Room not found. Check the code and try again.');
       }
-
+      // adds user to the rooms participant list and then navigates to the room
       const roomDoc = roomQuery.docs[0];
       const roomData = roomDoc.data();
 
@@ -62,7 +63,6 @@ export default function JoinDecisionScreen() {
           : [],
         result_votes: roomData.result_votes ?? null,
       };
-
       router.push({
         pathname: nextDecision.phase === 'results' ? '/results' : nextDecision.phase === 'voting' ? '/voting' : '/decision-room',
         params: {
