@@ -17,6 +17,10 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="create-decision" options={{ headerShown: false }} />
+        <Stack.Screen name="join-decision" options={{ headerShown: false }} />
+        <Stack.Screen name="decision-room" options={{ headerShown: false }} />
+        <Stack.Screen name="voting" options={{ headerShown: false }} />
+        <Stack.Screen name="results" options={{ headerShown: false }} />
         <Stack.Screen name="add-options" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>

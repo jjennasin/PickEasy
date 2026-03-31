@@ -1,8 +1,8 @@
+import { palette } from '@/constants/palette';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { palette } from '@/constants/palette';
 
 const recentPicks = [
   {
@@ -56,7 +56,9 @@ export default function HomeScreen() {
             <MaterialCommunityIcons name="plus-circle-outline" size={34} color={palette.white} />
           </Pressable>
 
-          <Pressable style={[styles.primaryAction, styles.joinAction]}>
+          <Pressable 
+            style={[styles.primaryAction, styles.joinAction]}
+            onPress={() => router.push('/join-decision')}>
             <Text style={styles.primaryActionText}>Join with code</Text>
             <MaterialCommunityIcons name="chevron-double-right" size={34} color={palette.white} />
           </Pressable>
