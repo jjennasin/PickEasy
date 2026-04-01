@@ -1,37 +1,67 @@
 import { palette } from '@/constants/palette';
+import { db } from '@/firebaseConfig';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const recentPicks = [
-  {
-    id: '1',
-    title: 'Dinner with Roommates',
-    result: 'Chipotle',
-    time: 'Yesterday',
-    backgroundColor: palette.peach,
-    textColor: palette.white,
-  },
-  {
-    id: '2',
-    title: 'Dinner with Roommates',
-    result: 'Chipotle',
-    time: 'Yesterday',
-    backgroundColor: palette.blue,
-    textColor: palette.white,
-  },
-  {
-    id: '3',
-    title: 'Dinner with Roommates',
-    result: 'Chipotle',
-    time: 'Yesterday',
-    backgroundColor: palette.red,
-    textColor: palette.white,
-  },
-];
+interface RecentPick {
+  id: string;
+  title: string;
+  result: string;
+  createdAt: string | null;
+}
 
 export default function HomeScreen() {
+  const [recentPicks, setRecentPicks] = useState<RecentPick[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadRecent = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // recent decisions from firestore ordered by date, only 8 at a time
+        const decisionsQuery = query(
+          collection(db, 'decisions'),
+          orderBy('created_at', 'desc'),
+          limit(8)
+        );
+        const snapshot = await getDocs(decisionsQuery);
+        const docs = snapshot.docs.map((doc) => {
+          const data = doc.data() as any;
+          const createdAt =
+          // formats like March 23 at 3:45 PM etc
+            data.created_at?.toDate instanceof Function
+              ? data.created_at.toDate().toLocaleString([], {
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : null;
+          return {
+            id: doc.id,
+            title: data.name ?? 'Untitled decision',
+            result: data.result ?? 'No result yet',
+            createdAt,
+          };
+        });
+        setRecentPicks(docs);
+      } catch (loadError) {
+        console.error('couldnt load recent decisions:', loadError);
+        setError('Failed to load recent decisions.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRecent();
+  }, []);
+
   const router = useRouter();
 
   return (
@@ -67,22 +97,25 @@ export default function HomeScreen() {
         <View style={styles.recentCard}>
           <Text style={styles.recentTitle}>Recent picks</Text>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recentRow}>
-            {recentPicks.map((pick) => (
-              <View
-                key={pick.id}
-                style={[styles.pickCard, { backgroundColor: pick.backgroundColor }]}>
-                <Text style={[styles.pickText, { color: pick.textColor }]}>
-                  {'\u{1F354}'} {pick.title}
-                </Text>
-                <Text style={[styles.pickText, { color: pick.textColor }]}>{'\u{2192}'} {pick.result}</Text>
-                <Text style={[styles.pickText, { color: pick.textColor }]}>{pick.time}</Text>
-              </View>
-            ))}
-          </ScrollView>
+          {loading ? (
+            <Text style={styles.statusText}>Loading recent decisions...</Text>
+          ) : error ? (
+            <Text style={styles.statusText}>{error}</Text>
+          ) : recentPicks.length === 0 ? (
+            <Text style={styles.statusText}>No recent decisions yet.</Text>
+          ) : (
+            <ScrollView
+              horizontal
+              contentContainerStyle={styles.recentRow}>
+              {recentPicks.map((pick) => (
+                <View key={pick.id} style={styles.pickCard}>
+                  <Text style={styles.pickText}>{pick.title}</Text>
+                  <Text style={styles.pickDetail}>Result: {pick.result}</Text>
+                  {pick.createdAt ? <Text style={styles.pickDetail}>{pick.createdAt}</Text> : null}
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -195,14 +228,30 @@ const styles = StyleSheet.create({
   },
   pickCard: {
     width: 230,
-    minHeight: 220,
+    minHeight: 170,
     borderRadius: 34,
     padding: 18,
     justifyContent: 'center',
+    backgroundColor: palette.white,
+    borderWidth: 1,
+    borderColor: '#D9D3CB',
   },
   pickText: {
     fontSize: 20,
-    lineHeight: 42,
-    fontWeight: '500',
+    lineHeight: 26,
+    fontWeight: '600',
+    color: palette.darkBlue,
+  },
+  pickDetail: {
+    marginTop: 6,
+    fontSize: 16,
+    color: palette.ink,
+  },
+  statusText: {
+    paddingHorizontal: 24,
+    marginTop: 12,
+    color: palette.blue,
+    fontSize: 18,
+    textAlign: 'center',
   },
 });

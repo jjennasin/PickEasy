@@ -1,4 +1,5 @@
 import { palette } from "@/constants/palette";
+import { db } from "@/firebaseConfig";
 import type {
   DecisionCategory,
   DecisionOption,
@@ -10,7 +11,8 @@ import {
 } from "@/utils/decision-route";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -105,17 +107,75 @@ const emptyDecisionRecord: DecisionRecord = {
 
 export default function AddOptionsScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ decision?: string }>();
+  const params = useLocalSearchParams<{ decision?: string; participantId?: string }>();
+  const participantId = typeof params.participantId === 'string' ? params.participantId : '';
   const initialDecision =
     parseDecisionRecord(params.decision) ?? emptyDecisionRecord;
 
   const [decision, setDecision] = useState<DecisionRecord>(initialDecision);
   const [newOptionName, setNewOptionName] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const suggestions = useMemo(
     () => (decision.category ? suggestionMap[decision.category] : []),
     [decision.category],
   );
+
+  useEffect(() => {
+    if (!decision.uuid) {
+      return undefined;
+    }
+    // for realtime updates so everyone can see the options as they get added
+    const unsubscribe = onSnapshot(doc(db, "decisions", decision.uuid), (snapshot) => {
+      if (!snapshot.exists()) {
+        return;
+      }
+
+      const roomData = snapshot.data();
+
+      const nextDecision = {
+        uuid: roomData.uuid ?? snapshot.id,
+        join_code: roomData.join_code ?? null,
+        name: roomData.name ?? "",
+        category: roomData.category ?? null,
+        options: Array.isArray(roomData.options) ? roomData.options : [],
+        result: roomData.result ?? null,
+        created_at:
+          typeof roomData.created_at?.toDate === "function"
+            ? roomData.created_at.toDate().toISOString()
+            : roomData.created_at ?? null,
+        phase: roomData.phase ?? "options",
+        participants: Array.isArray(roomData.participants) ? roomData.participants : [],
+        completed_voters: Array.isArray(roomData.completed_voters)
+          ? roomData.completed_voters
+          : [],
+        result_votes: roomData.result_votes ?? null,
+      };
+
+      setDecision(nextDecision);
+
+      if (nextDecision.phase === "voting") {
+        router.replace({
+          pathname: "/voting",
+          params: {
+            decision: serializeDecisionRecord(nextDecision),
+            participantId,
+          },
+        });
+      }
+
+      if (nextDecision.phase === "results") {
+        router.replace({
+          pathname: "/results",
+          params: {
+            decision: serializeDecisionRecord(nextDecision),
+          },
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [decision.uuid, participantId, router]);
 
   const logDecisionUpdate = (updatedDecision: DecisionRecord) => {
     console.log("updatedDecision", updatedDecision);
@@ -125,7 +185,7 @@ export default function AddOptionsScreen() {
     );
   };
 
-  const updateDecisionOptions = (nextOptions: DecisionOption[]) => {
+  const updateDecisionOptions = async (nextOptions: DecisionOption[]) => {
     const updatedDecision = {
       ...decision,
       options: nextOptions,
@@ -133,6 +193,21 @@ export default function AddOptionsScreen() {
 
     setDecision(updatedDecision);
     logDecisionUpdate(updatedDecision);
+
+    if (!decision.uuid) {
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "decisions", decision.uuid), {
+        options: nextOptions,
+      });
+    } catch (error) {
+      console.error("Error in syncing the room options:", error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Can't sync room updates"
+      );
+    }
   };
 
   const addOption = (label: string) => {
@@ -170,16 +245,14 @@ export default function AddOptionsScreen() {
 
   const canContinue = decision.options.length > 0;
 
-  const handleContinue = () => {
-    if (!canContinue) {
+  const handleContinue = async () => {
+    if (!canContinue || !decision.uuid) {
       return;
     }
 
-    router.push({
-      pathname: "/voting",
-      params: {
-        decision: serializeDecisionRecord(decision),
-      },
+    await updateDoc(doc(db, "decisions", decision.uuid), {
+      phase: "voting",
+      options: decision.options,
     });
   };
 
@@ -281,6 +354,8 @@ export default function AddOptionsScreen() {
         </View>
 
         <View style={styles.divider} />
+
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
         <Pressable
           style={[
@@ -398,6 +473,14 @@ const styles = StyleSheet.create({
     backgroundColor: palette.darkBlue,
     marginHorizontal: 36,
     marginTop: 34,
+  },
+  errorText: {
+    marginTop: 20,
+    marginHorizontal: 22,
+    color: palette.red,
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
   sectionTitle: {
     marginTop: 24,
