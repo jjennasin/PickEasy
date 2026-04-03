@@ -5,8 +5,9 @@ import { serializeDecisionRecord } from '@/utils/decision-route';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 
 type CategoryOption = {
   id: DecisionCategory;
@@ -88,6 +89,16 @@ export default function CreateDecisionScreen() {
     }
   };
 
+  const copyToClipboard = async () => {
+    try {
+      await Clipboard.setStringAsync(decisionDraft.join_code ?? '');
+      Alert.alert('Copied to clipboard', 'The room code has been copied to your clipboard.');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      Alert.alert('Error', 'Failed to copy the room code. Please try again.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
@@ -147,11 +158,12 @@ export default function CreateDecisionScreen() {
         </Text>
 
         <View style={styles.roomCodeBox}>
-          <Text style={styles.roomCodeText}>{decisionDraft.join_code ?? ' '}</Text>
+          <Text selectable={true}style={styles.roomCodeText}>{decisionDraft.join_code ?? ' '}</Text>
         </View>
 
         <View style={styles.shareRow}>
-          <Text style={styles.shareText}>Share code</Text>
+          {/* <Text style={styles.shareText}>Share code</Text> */}
+          <Button title="Share Code" onPress={copyToClipboard} />
           <MaterialCommunityIcons name="export-variant" size={28} color={palette.blue} />
         </View>
 
